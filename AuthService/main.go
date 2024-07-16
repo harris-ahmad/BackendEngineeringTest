@@ -65,12 +65,14 @@ func init() {
 }
 
 func (s *AuthService) SignupWithPhoneNumber(ctx context.Context, in *authpb.SignupWithPhoneNumberRequest) (*authpb.SignupWithPhoneNumberResponse, error) {
+	// generate otp
 	otpResponse, err := otpClient.GenerateOtp(ctx, &otppb.GenerateOtpRequest{
 		PhoneNumber: in.PhoneNumber,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("FAILED TO GENERATE OTP: %v", err)
 	}
+
 	// save otpResponse to database
 	_, err = db.Exec("INSERT INTO otps (phone_number, otp) VALUES ($1, $2)", in.PhoneNumber, otpResponse.Otp)
 	if err != nil {
@@ -79,11 +81,23 @@ func (s *AuthService) SignupWithPhoneNumber(ctx context.Context, in *authpb.Sign
 
 	// send otpResponse to user
 	publishOtpMessage(in.PhoneNumber, otpResponse.Otp)
-	return &authpb.SignupWithPhoneNumberResponse{VerificationCode: "Signup Successful, OTP sent"}, nil
+	return &authpb.SignupWithPhoneNumberResponse{VerificationCode: otpResponse.Otp}, nil
 }
 
 func (s *AuthService) VerifyPhoneNumber(ctx context.Context, in *authpb.VerifyPhoneNumberRequest) (*authpb.VerifyPhoneNumberResponse, error) {
-	return &authpb.VerifyPhoneNumberResponse{}, nil
+	var otp string
+	err := db.QueryRow("SELECT otp FROM users WHERE phone_number = $1", in.PhoneNumber).Scan(&otp)
+	if err != nil {
+		return nil, fmt.Errorf("FAILED TO GET OTP FROM DATABASE: %v", err)
+	}
+	if in.VerificationCode == otp {
+		_, err = db.Exec("UPDATE users SET is_verified = true WHERE phone_number = $1", in.PhoneNumber)
+		if err != nil {
+			return nil, fmt.Errorf("FAILED TO UPDATE USER TO VERIFIED: %v", err)
+		}
+		return &authpb.VerifyPhoneNumberResponse{Token: "Phone Number Verified"}, nil
+	}
+	return &authpb.VerifyPhoneNumberResponse{Token: "Invalid OTP"}, nil
 }
 
 func (s *AuthService) LoginWithPhoneNumber(ctx context.Context, in *authpb.LoginWithPhoneNumberRequest) (*authpb.LoginWithPhoneNumberResponse, error) {
