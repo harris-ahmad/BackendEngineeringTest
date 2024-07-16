@@ -14,6 +14,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/streadway/amqp"
 	"google.golang.org/grpc"
+
+	_ "github.com/lib/pq" // Import PostgreSQL driver
 )
 
 type AuthService struct {
@@ -23,14 +25,6 @@ type AuthService struct {
 var (
 	db      *sql.DB
 	channel *amqp.Channel
-)
-
-var (
-	dbUser string = os.Getenv("DB_USER")
-	dbPass string = os.Getenv("DB_PASS")
-	dbName string = os.Getenv("DB_NAME")
-	dbHost string = os.Getenv("DB_HOST")
-	dbPort string = os.Getenv("DB_PORT")
 )
 
 func publishOtpMessage(phoneNumber, otp string) {
@@ -57,7 +51,16 @@ func init() {
 		log.Fatalf("Failed to load .env file: %v", err)
 	}
 
-	connString := fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%s sslmode=disable", dbUser, dbPass, dbName, dbHost, dbPort)
+	var (
+		dbUser string = os.Getenv("DB_USER")
+		dbPass string = os.Getenv("DB_PASS")
+		dbName string = os.Getenv("DB_NAME")
+		dbHost string = os.Getenv("DB_HOST")
+		dbPort string = os.Getenv("DB_PORT")
+	)
+
+	connString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", dbHost, dbPort, dbUser, dbPass, dbName)
+	fmt.Println(connString)
 	db, err = sql.Open("postgres", connString)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
