@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "proto;auth";
+
+service AuthService {
+  rpc SignupWithPhoneNumber(SignupWithPhoneNumberRequest) returns (SignupWithPhoneNumberResponse) {}
+  rpc VerifyPhoneNumber(VerifyPhoneNumberRequest) returns (VerifyPhoneNumberResponse) {}
+  rpc LoginWithPhoneNumber(LoginWithPhoneNumberRequest) returns (LoginWithPhoneNumberResponse) {}
+  rpc ValidatePhoneNumberLogin(ValidatePhoneNumberLoginRequest) returns (ValidatePhoneNumberLoginResponse) {}
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse) {}
+}
+
+message SignupWithPhoneNumberRequest {
+  string phoneNumber = 1;
+}
+
+message SignupWithPhoneNumberResponse {
+  string verificationCode = 1;
+}
+
+message VerifyPhoneNumberRequest {
+  string phoneNumber = 1;
+  string verificationCode = 2;
+}
+
+message VerifyPhoneNumberResponse {
+  string token = 1;
+}
+
+message LoginWithPhoneNumberRequest {
+  string phoneNumber = 1;
+}
+
+message LoginWithPhoneNumberResponse {
+  string verificationCode = 1;
+}
+
+message ValidatePhoneNumberLoginRequest {
+  string phoneNumber = 1;
+  string verificationCode = 2;
+}
+
+message ValidatePhoneNumberLoginResponse {
+  string token = 1;
+}
+
+message GetProfileRequest {
+  string token = 1;
+}
+
+message GetProfileResponse {
+  string phoneNumber = 1;
+}
