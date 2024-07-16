@@ -36,6 +36,19 @@ var (
 	dbPort string = os.Getenv("DB_PORT")
 )
 
+func publishOtpMessage(phoneNumber, otp string) {
+	var err error
+	var mssgBody string
+	mssgBody = fmt.Sprintf("OTP for phone number %s is %s", phoneNumber, otp)
+	err = channel.Publish("", "otp", false, false, amqp.Publishing{
+		ContentType: "text/plain",
+		Body:        []byte(mssgBody),
+	})
+	if err != nil {
+		log.Fatalf("Failed to publish message: %v", err)
+	}
+}
+
 func init() {
 	var err error
 
@@ -52,7 +65,20 @@ func init() {
 }
 
 func (s *AuthService) SignupWithPhoneNumber(ctx context.Context, in *authpb.SignupWithPhoneNumberRequest) (*authpb.SignupWithPhoneNumberResponse, error) {
-	return &authpb.SignupWithPhoneNumberResponse{}, nil
+	otpResponse, err := otpClient.GenerateOtp(ctx, &otppb.GenerateOtpRequest{
+		PhoneNumber: in.PhoneNumber,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("Failed to generate OTP: %v", err)
+	}
+	// save otpResponse to database
+	_, err = db.Exec("INSERT INTO otps (phone_number, otp) VALUES ($1, $2)", in.PhoneNumber, otpResponse.Otp)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to save OTP to database: %v", err)
+	}
+
+	// send otpResponse to user
+
 }
 
 func (s *AuthService) VerifyPhoneNumber(ctx context.Context, in *authpb.VerifyPhoneNumberRequest) (*authpb.VerifyPhoneNumberResponse, error) {
