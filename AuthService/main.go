@@ -1,8 +1,9 @@
 package main
 
 import (
+	authpb "BackendEngineeringTest/AuthService/authproto"
 	otppb "BackendEngineeringTest/AuthService/otpproto"
-	authpb "BackendEngineeringTest/AuthService/proto"
+
 	"crypto/x509"
 
 	"context"
@@ -81,7 +82,7 @@ func (s *AuthService) SignupWithPhoneNumber(ctx context.Context, in *authpb.Sign
 
 	// send otpResponse to user
 	publishOtpMessage(in.PhoneNumber, otpResponse.Otp)
-	return &authpb.SignupWithPhoneNumberResponse{VerificationCode: otpResponse.Otp}, nil
+	return &authpb.SignupWithPhoneNumberResponse{Message: "Signup Successful, OTP sent"}, nil
 }
 
 func (s *AuthService) VerifyPhoneNumber(ctx context.Context, in *authpb.VerifyPhoneNumberRequest) (*authpb.VerifyPhoneNumberResponse, error) {
@@ -101,7 +102,12 @@ func (s *AuthService) VerifyPhoneNumber(ctx context.Context, in *authpb.VerifyPh
 }
 
 func (s *AuthService) LoginWithPhoneNumber(ctx context.Context, in *authpb.LoginWithPhoneNumberRequest) (*authpb.LoginWithPhoneNumberResponse, error) {
-	return &authpb.LoginWithPhoneNumberResponse{}, nil
+	var verified bool
+	err := db.QueryRow("SELECT is_verified FROM users WHERE phone_number = $1", in.PhoneNumber).Scan(&verified)
+	if err != nil || !verified {
+		return nil, fmt.Errorf("FAILED TO GET USER FROM DATABASE: %v", err)
+	}
+	return &authpb.LoginWithPhoneNumberResponse{IsValid: verified, VerificationCode: ""}, nil
 }
 
 func (s *AuthService) GetProfile(ctx context.Context, in *authpb.GetProfileRequest) (*authpb.GetProfileResponse, error) {
