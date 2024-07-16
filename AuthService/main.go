@@ -2,15 +2,22 @@ package main
 
 import (
 	pb "BackendEngineeringTest/AuthService/proto"
+	"database/sql"
 	"log"
 	"net"
 
+	"github.com/streadway/amqp"
 	"google.golang.org/grpc"
 )
 
 type AuthService struct {
 	pb.UnimplementedAuthServiceServer
 }
+
+var (
+	db      *sql.DB
+	channel *amqp.Channel
+)
 
 func main() {
 	listener, err := net.Listen("tcp", ":8080")
