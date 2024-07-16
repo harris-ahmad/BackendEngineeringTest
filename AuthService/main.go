@@ -1,7 +1,10 @@
 package main
 
 import (
-	pb "BackendEngineeringTest/AuthService/proto"
+	otppb "BackendEngineeringTest/AuthService/otpproto"
+	authpb "BackendEngineeringTest/AuthService/proto"
+	"crypto/x509"
+
 	"context"
 	"database/sql"
 	"fmt"
@@ -12,15 +15,25 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/streadway/amqp"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 type AuthService struct {
-	pb.UnimplementedAuthServiceServer
+	authpb.UnimplementedAuthServiceServer
 }
 
 var (
-	db      *sql.DB
-	channel *amqp.Channel
+	db        *sql.DB
+	channel   *amqp.Channel
+	otpClient otppb.OtpServiceClient
+)
+
+var (
+	dbUser string = os.Getenv("DB_USER")
+	dbPass string = os.Getenv("DB_PASS")
+	dbName string = os.Getenv("DB_NAME")
+	dbHost string = os.Getenv("DB_HOST")
+	dbPort string = os.Getenv("DB_PORT")
 )
 
 func init() {
@@ -31,14 +44,6 @@ func init() {
 		log.Fatalf("Failed to load .env file: %v", err)
 	}
 
-	var (
-		dbUser string = os.Getenv("DB_USER")
-		dbPass string = os.Getenv("DB_PASS")
-		dbName string = os.Getenv("DB_NAME")
-		dbHost string = os.Getenv("DB_HOST")
-		dbPort string = os.Getenv("DB_PORT")
-	)
-
 	connString := fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%s sslmode=disable", dbUser, dbPass, dbName, dbHost, dbPort)
 	db, err = sql.Open("postgres", connString)
 	if err != nil {
@@ -46,20 +51,20 @@ func init() {
 	}
 }
 
-func (s *AuthService) SignupWithPhoneNumber(ctx context.Context, in *pb.SignupWithPhoneNumberRequest) (*pb.SignupWithPhoneNumberResponse, error) {
-	return &pb.SignupWithPhoneNumberResponse{}, nil
+func (s *AuthService) SignupWithPhoneNumber(ctx context.Context, in *authpb.SignupWithPhoneNumberRequest) (*authpb.SignupWithPhoneNumberResponse, error) {
+	return &authpb.SignupWithPhoneNumberResponse{}, nil
 }
 
-func (s *AuthService) VerifyPhoneNumber(ctx context.Context, in *pb.VerifyPhoneNumberRequest) (*pb.VerifyPhoneNumberResponse, error) {
-	return &pb.VerifyPhoneNumberResponse{}, nil
+func (s *AuthService) VerifyPhoneNumber(ctx context.Context, in *authpb.VerifyPhoneNumberRequest) (*authpb.VerifyPhoneNumberResponse, error) {
+	return &authpb.VerifyPhoneNumberResponse{}, nil
 }
 
-func (s *AuthService) LoginWithPhoneNumber(ctx context.Context, in *pb.LoginWithPhoneNumberRequest) (*pb.LoginWithPhoneNumberResponse, error) {
-	return &pb.LoginWithPhoneNumberResponse{}, nil
+func (s *AuthService) LoginWithPhoneNumber(ctx context.Context, in *authpb.LoginWithPhoneNumberRequest) (*authpb.LoginWithPhoneNumberResponse, error) {
+	return &authpb.LoginWithPhoneNumberResponse{}, nil
 }
 
-func (s *AuthService) GetProfile(ctx context.Context, in *pb.GetProfileRequest) (*pb.GetProfileResponse, error) {
-	return &pb.GetProfileResponse{}, nil
+func (s *AuthService) GetProfile(ctx context.Context, in *authpb.GetProfileRequest) (*authpb.GetProfileResponse, error) {
+	return &authpb.GetProfileResponse{}, nil
 }
 
 func main() {
@@ -68,8 +73,18 @@ func main() {
 		log.Fatalf("Failed to listen: %v", err)
 	}
 	rpcServer := grpc.NewServer()
-	pb.RegisterAuthServiceServer(rpcServer, &AuthService{})
+	authpb.RegisterAuthServiceServer(rpcServer, &AuthService{})
 	if err := rpcServer.Serve(listener); err != nil {
 		log.Fatalf("Failed to serve: %v", err)
 	}
+
+	// connect to OTP service
+	certPool := x509.NewCertPool()
+	conn, err := grpc.NewClient("localhost:8081", grpc.WithTransportCredentials(
+		credentials.NewClientTLSFromCert(certPool, ""),
+	))
+	if err != nil {
+		log.Fatalf("Failed to connect to OTP service: %v", err)
+	}
+	otpClient = otppb.NewOtpServiceClient(conn)
 }
