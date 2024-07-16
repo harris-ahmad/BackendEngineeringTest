@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package otp;
+
+option go_package = "proto;otp";
+
+service OtpService {
+  rpc GenerateOtp(GenerateOtpRequest) returns (GenerateOtpResponse) {}
+  rpc ValidateOtp(ValidateOtpRequest) returns (ValidateOtpResponse) {}
+}
+
+message GenerateOtpRequest {
+  string phoneNumber = 1;
+}
+
+message GenerateOtpResponse {
+  string otp = 1;
+}
+
+message ValidateOtpRequest {
+  string phoneNumber = 1;
+  string otp = 2;
+}
+
+message ValidateOtpResponse {
+  string token = 1;
+}
