@@ -2,6 +2,7 @@ package main
 
 import (
 	pb "BackendEngineeringTest/AuthService/proto"
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -43,6 +44,22 @@ func init() {
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
+}
+
+func (s *AuthService) SignupWithPhoneNumber(ctx context.Context, in *pb.SignupWithPhoneNumberRequest) (*pb.SignupWithPhoneNumberResponse, error) {
+	return &pb.SignupWithPhoneNumberResponse{}, nil
+}
+
+func (s *AuthService) VerifyPhoneNumber(ctx context.Context, in *pb.VerifyPhoneNumberRequest) (*pb.VerifyPhoneNumberResponse, error) {
+	return &pb.VerifyPhoneNumberResponse{}, nil
+}
+
+func (s *AuthService) LoginWithPhoneNumber(ctx context.Context, in *pb.LoginWithPhoneNumberRequest) (*pb.LoginWithPhoneNumberResponse, error) {
+	return &pb.LoginWithPhoneNumberResponse{}, nil
+}
+
+func (s *AuthService) GetProfile(ctx context.Context, in *pb.GetProfileRequest) (*pb.GetProfileResponse, error) {
+	return &pb.GetProfileResponse{}, nil
 }
 
 func main() {
