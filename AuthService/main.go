@@ -69,16 +69,17 @@ func (s *AuthService) SignupWithPhoneNumber(ctx context.Context, in *authpb.Sign
 		PhoneNumber: in.PhoneNumber,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Failed to generate OTP: %v", err)
+		return nil, fmt.Errorf("FAILED TO GENERATE OTP: %v", err)
 	}
 	// save otpResponse to database
 	_, err = db.Exec("INSERT INTO otps (phone_number, otp) VALUES ($1, $2)", in.PhoneNumber, otpResponse.Otp)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to save OTP to database: %v", err)
+		return nil, fmt.Errorf("FAILED TO SAVE OTP TO DATABASE: %v", err)
 	}
 
 	// send otpResponse to user
-
+	publishOtpMessage(in.PhoneNumber, otpResponse.Otp)
+	return &authpb.SignupWithPhoneNumberResponse{VerificationCode: "Signup Successful, OTP sent"}, nil
 }
 
 func (s *AuthService) VerifyPhoneNumber(ctx context.Context, in *authpb.VerifyPhoneNumberRequest) (*authpb.VerifyPhoneNumberResponse, error) {
