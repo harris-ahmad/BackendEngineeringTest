@@ -1,4 +1,4 @@
-module BackendEngineeringTest/OtpService
+module github.com/harris-ahmad/BackendEngineeringTest/OtpService
 
 go 1.22.5
 

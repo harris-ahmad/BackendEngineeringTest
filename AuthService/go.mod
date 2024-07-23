@@ -1,4 +1,4 @@
-module BackendEngineeringTest/AuthService
+module github.com/harris-ahmad/BackendEngineeringTest/AuthService
 
 go 1.22.5
 

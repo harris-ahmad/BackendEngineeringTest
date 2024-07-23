@@ -1,8 +1,9 @@
 package main
 
 import (
-	pb "BackendEngineeringTest/OtpService/proto"
 	"context"
+
+	pb "github.com/harris-ahmad/BackendEngineeringTest/OtpService/proto"
 
 	"github.com/streadway/amqp"
 )
